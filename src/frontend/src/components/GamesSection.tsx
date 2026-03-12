@@ -6,7 +6,7 @@ export const games = [
   {
     id: 1,
     title: "VR Zombie Shooter",
-    image: "/assets/generated/game-zombie.dim_600x400.jpg",
+    image: "/assets/generated/vr-zombie-shooter.dim_600x400.jpg",
     desc: "Survive the undead apocalypse in full immersive VR. Your heart will pound!",
     tag: "Horror",
     tagColor: "red" as const,
@@ -14,7 +14,7 @@ export const games = [
   {
     id: 2,
     title: "VR Cricket",
-    image: "/assets/generated/game-cricket.dim_600x400.jpg",
+    image: "/assets/generated/vr-cricket.dim_600x400.jpg",
     desc: "Step onto a virtual cricket field. Feel the thrill of every boundary!",
     tag: "Sports",
     tagColor: "blue" as const,
@@ -22,7 +22,7 @@ export const games = [
   {
     id: 3,
     title: "Racing Simulator",
-    image: "/assets/generated/game-racing.dim_600x400.jpg",
+    image: "/assets/generated/racing-simulator.dim_600x400.jpg",
     desc: "Race through neon-lit cyberpunk cities at breakneck speed.",
     tag: "Racing",
     tagColor: "purple" as const,

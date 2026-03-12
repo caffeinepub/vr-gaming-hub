@@ -261,8 +261,11 @@ export function HeroSection() {
           backgroundImage: "url('/assets/generated/hero-vr.dim_1200x600.jpg')",
         }}
       />
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-background/75" />
+      {/* Dark overlay - increased opacity for better text contrast */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "rgba(0,0,0,0.72)" }}
+      />
       {/* Purple-blue gradient overlay */}
       <div
         className="absolute inset-0"
@@ -300,7 +303,11 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="block text-foreground animate-neon-flicker"
+              className="block text-white animate-neon-flicker"
+              style={{
+                textShadow:
+                  "0 2px 24px rgba(0,0,0,0.9), 0 0px 4px rgba(0,0,0,1)",
+              }}
             >
               Experience the
             </motion.span>
@@ -309,6 +316,9 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
               className="block text-neon-blue glow-blue"
+              style={{
+                textShadow: "0 2px 24px rgba(0,0,0,0.9), 0 0 20px #00c8ff",
+              }}
             >
               Future of Gaming
             </motion.span>
@@ -317,6 +327,9 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
               className="block text-neon-purple glow-purple"
+              style={{
+                textShadow: "0 2px 24px rgba(0,0,0,0.9), 0 0 20px #b000f0",
+              }}
             >
               in VR
             </motion.span>
@@ -327,10 +340,11 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
-            className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed"
+            className="text-lg sm:text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-10 leading-relaxed"
+            style={{ textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}
           >
             Play PS5, VR Zombie Games, Cricket VR & More at{" "}
-            <span className="text-foreground font-semibold">
+            <span className="text-white font-semibold">
               Hyderabad's Top VR Gaming Hub
             </span>
           </motion.p>
@@ -381,9 +395,7 @@ export function HeroSection() {
                 <div className="text-2xl md:text-3xl font-display font-black text-neon-blue glow-blue">
                   {stat.value}
                 </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {stat.label}
-                </div>
+                <div className="text-sm text-gray-300 mt-1">{stat.label}</div>
               </div>
             ))}
           </motion.div>

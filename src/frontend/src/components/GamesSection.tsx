@@ -30,7 +30,7 @@ export const games = [
   {
     id: 4,
     title: "Multiplayer VR Battles",
-    image: "/assets/generated/game-multiplayer.dim_600x400.jpg",
+    image: "/assets/generated/multiplayer-vr-battle.dim_600x400.jpg",
     desc: "Battle your friends in epic multi-player virtual reality arenas.",
     tag: "Multiplayer",
     tagColor: "blue" as const,
@@ -38,7 +38,7 @@ export const games = [
   {
     id: 5,
     title: "PS5 Gaming",
-    image: "/assets/generated/game-ps5.dim_600x400.jpg",
+    image: "/assets/generated/ps5-gaming.dim_600x400.jpg",
     desc: "Experience the latest PS5 titles on stunning 4K displays.",
     tag: "Console",
     tagColor: "purple" as const,
@@ -46,7 +46,7 @@ export const games = [
   {
     id: 6,
     title: "Party Games",
-    image: "/assets/generated/game-party.dim_600x400.jpg",
+    image: "/assets/generated/party-games.dim_600x400.jpg",
     desc: "Perfect for birthdays and group fun. Everyone plays, everyone wins!",
     tag: "Party",
     tagColor: "red" as const,

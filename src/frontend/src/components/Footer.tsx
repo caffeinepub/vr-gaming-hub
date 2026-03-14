@@ -35,7 +35,7 @@ export function Footer() {
               </div>
               <div>
                 <p className="font-display font-black text-xl text-neon-blue glow-blue">
-                  VR Gaming Hub
+                  VRHub
                 </p>
                 <p className="text-muted-foreground text-xs">
                   Hyderabad's #1 VR Center
@@ -127,7 +127,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-3 text-center">
           <p className="text-muted-foreground text-sm">
-            © {year} VR Gaming Hub. All rights reserved.
+            © {year} VRHub. All rights reserved.
           </p>
           <p className="text-muted-foreground text-sm">
             Built with ❤️ using{" "}

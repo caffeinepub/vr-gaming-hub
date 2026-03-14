@@ -345,7 +345,7 @@ export function HeroSection() {
           >
             Play PS5, VR Zombie Games, Cricket VR & More at{" "}
             <span className="text-white font-semibold">
-              Hyderabad's Top VR Gaming Hub
+              Hyderabad's Top VRHub
             </span>
           </motion.p>
 
@@ -370,7 +370,7 @@ export function HeroSection() {
                 data-ocid="hero.call_now.button"
                 variant="outline"
                 size="lg"
-                className="border-neon-red text-neon-red hover:bg-neon-red/10 font-bold text-lg px-8 py-6 shadow-neon-red w-full"
+                className="border-neon-red text-neon-red hover:bg-neon-red/10 hover:text-neon-red font-bold text-lg px-8 py-6 shadow-neon-red w-full"
               >
                 <Phone className="w-5 h-5" />
                 Call Now

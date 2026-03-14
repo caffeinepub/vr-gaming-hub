@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 const galleryImages = [
   {
     src: "/assets/generated/hero-vr.dim_1200x600.jpg",
-    alt: "VR Gaming Hub - Full Experience",
+    alt: "VRHub - Full Experience",
     span: "col-span-2",
   },
   {
@@ -18,7 +18,7 @@ const galleryImages = [
   },
   {
     src: "/assets/generated/birthday-party.dim_800x500.jpg",
-    alt: "Birthday Party at VR Hub",
+    alt: "Birthday Party at VRHub",
     span: "",
   },
   {
@@ -48,8 +48,7 @@ export function GallerySection() {
             Gallery
           </p>
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black">
-            Inside{" "}
-            <span className="text-neon-blue glow-blue">VR Gaming Hub</span>
+            Inside <span className="text-neon-blue glow-blue">VRHub</span>
           </h2>
           <div className="cyber-divider max-w-xs mx-auto mt-6" />
         </motion.div>

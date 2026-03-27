@@ -161,8 +161,10 @@ export function ReviewsSection() {
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {reviews.map((review) => (
-              <div
+              <motion.div
                 key={review.name}
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 className="min-w-[300px] snap-start rounded-xl border border-border bg-card p-5 shrink-0"
               >
                 <div className="flex items-center gap-3 mb-3">
@@ -182,7 +184,7 @@ export function ReviewsSection() {
                 <p className="text-muted-foreground text-sm leading-relaxed mt-2">
                   "{review.text}"
                 </p>
-              </div>
+              </motion.div>
             ))}
           </div>
 

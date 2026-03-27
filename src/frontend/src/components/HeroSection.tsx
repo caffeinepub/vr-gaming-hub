@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Phone, Zap } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Star {
   id: string;
@@ -17,7 +17,6 @@ interface Star {
 function NeonGrid() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Animated grid overlay */}
       <div
         className="absolute inset-0 animate-grid-slide"
         style={{
@@ -26,7 +25,6 @@ function NeonGrid() {
           backgroundSize: "60px 60px",
         }}
       />
-      {/* Perspective grid at bottom */}
       <div
         className="absolute bottom-0 left-0 right-0 h-48"
         style={{
@@ -207,11 +205,9 @@ function CanvasParticles() {
         const alpha = 1 - p.life / p.maxLife;
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx!.fillStyle =
-          p.color +
-          Math.floor(alpha * 255)
-            .toString(16)
-            .padStart(2, "0");
+        ctx!.fillStyle = `${p.color}${Math.floor(alpha * 255)
+          .toString(16)
+          .padStart(2, "0")}`;
         ctx!.fill();
 
         if (p.life >= p.maxLife) particles.splice(i, 1);
@@ -244,6 +240,107 @@ function CanvasParticles() {
   );
 }
 
+interface StatConfig {
+  target: number;
+  decimals: number;
+  suffix: string;
+  label: string;
+  delay: number;
+}
+
+const STATS: StatConfig[] = [
+  { target: 4.9, decimals: 1, suffix: "★", label: "Google Rating", delay: 0 },
+  { target: 700, decimals: 0, suffix: "+", label: "Happy Gamers", delay: 100 },
+  { target: 12, decimals: 0, suffix: "h", label: "Open Daily", delay: 200 },
+  { target: 6, decimals: 0, suffix: "+", label: "VR Experiences", delay: 300 },
+];
+
+function useCountUp(
+  target: number,
+  decimals: number,
+  duration: number,
+  delay: number,
+  active: boolean,
+) {
+  const initialDisplay = decimals > 0 ? `0.${"0".repeat(decimals)}` : "0";
+  const [display, setDisplay] = useState(initialDisplay);
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!active) return;
+
+    const timer = setTimeout(() => {
+      startTimeRef.current = null;
+
+      function tick(now: number) {
+        if (startTimeRef.current === null) startTimeRef.current = now;
+        const elapsed = now - startTimeRef.current;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - (1 - progress) ** 3;
+        const current = eased * target;
+        setDisplay(current.toFixed(decimals));
+        if (progress < 1) {
+          rafRef.current = requestAnimationFrame(tick);
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, [active, target, decimals, duration, delay]);
+
+  return display;
+}
+
+function AnimatedStat({ stat }: { stat: StatConfig }) {
+  const [active, setActive] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setActive(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const display = useCountUp(
+    stat.target,
+    stat.decimals,
+    1800,
+    stat.delay,
+    active,
+  );
+
+  return (
+    <motion.div
+      ref={ref}
+      className="text-center cursor-default"
+      whileHover={{ scale: 1.15, y: -4 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+    >
+      <div className="text-2xl md:text-3xl font-display font-black text-neon-blue glow-blue">
+        {display}
+        {stat.suffix}
+      </div>
+      <div className="text-sm text-gray-300 mt-1">{stat.label}</div>
+    </motion.div>
+  );
+}
+
 export function HeroSection() {
   const handleScroll = (href: string) => {
     document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
@@ -254,19 +351,16 @@ export function HeroSection() {
       id="home"
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
-      {/* Background image */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: "url('/assets/generated/hero-vr.dim_1200x600.jpg')",
         }}
       />
-      {/* Dark overlay - increased opacity for better text contrast */}
       <div
         className="absolute inset-0"
         style={{ background: "rgba(0,0,0,0.72)" }}
       />
-      {/* Purple-blue gradient overlay */}
       <div
         className="absolute inset-0"
         style={{
@@ -279,14 +373,12 @@ export function HeroSection() {
       <FloatingStars />
       <CanvasParticles />
 
-      {/* Content */}
       <div className="relative z-10 container mx-auto px-4 max-w-5xl text-center">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
         >
-          {/* Badge */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -297,7 +389,6 @@ export function HeroSection() {
             ⭐ 4.9 Rating · Hyderabad's #1 VR Gaming Center
           </motion.div>
 
-          {/* Main headline */}
           <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight mb-6">
             <motion.span
               initial={{ opacity: 0, y: 20 }}
@@ -335,7 +426,6 @@ export function HeroSection() {
             </motion.span>
           </h1>
 
-          {/* Subheadline */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -349,7 +439,6 @@ export function HeroSection() {
             </span>
           </motion.p>
 
-          {/* CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -378,31 +467,19 @@ export function HeroSection() {
             </a>
           </motion.div>
 
-          {/* Stats row */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9, duration: 0.6 }}
             className="mt-14 flex flex-wrap justify-center gap-6 md:gap-12"
           >
-            {[
-              { value: "4.9★", label: "Google Rating" },
-              { value: "700+", label: "Happy Gamers" },
-              { value: "12h", label: "Open Daily" },
-              { value: "6+", label: "VR Experiences" },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-2xl md:text-3xl font-display font-black text-neon-blue glow-blue">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-gray-300 mt-1">{stat.label}</div>
-              </div>
+            {STATS.map((stat) => (
+              <AnimatedStat key={stat.label} stat={stat} />
             ))}
           </motion.div>
         </motion.div>
       </div>
 
-      {/* Bottom gradient fade */}
       <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent pointer-events-none" />
     </section>
   );

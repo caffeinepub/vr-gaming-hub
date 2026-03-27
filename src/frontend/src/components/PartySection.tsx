@@ -63,7 +63,7 @@ export function PartySection() {
             Make It a Party to{" "}
             <span className="text-neon-red glow-red">Remember!</span>
           </h2>
-          <p className="text-muted-foreground mt-4 max-w-2xl mx-auto text-lg">
+          <p className="text-gray-200 mt-4 max-w-2xl mx-auto text-lg">
             From intimate birthday celebrations to large corporate events —
             we've got you covered.
           </p>
@@ -85,7 +85,7 @@ export function PartySection() {
               <h3 className="font-display font-bold text-lg text-foreground mb-2">
                 {event.title}
               </h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <p className="text-gray-300 text-sm leading-relaxed">
                 {event.desc}
               </p>
             </motion.div>

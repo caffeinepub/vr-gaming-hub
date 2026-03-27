@@ -73,6 +73,7 @@ function LeaderboardTable({ game }: { game: string }) {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: i * 0.05 }}
+          whileHover={{ x: 4, backgroundColor: "oklch(0.12 0.03 220 / 0.5)" }}
           className={`flex items-center gap-4 px-4 py-3 rounded-lg border ${
             i < 3
               ? "border-yellow-400/30 bg-yellow-400/5"

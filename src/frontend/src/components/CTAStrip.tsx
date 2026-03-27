@@ -33,13 +33,20 @@ export function CTAStrip({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.4 }}
+      whileHover={{ filter: "brightness(1.12)" }}
       className={`border-y ${bgClass} py-4 px-4`}
     >
       <div className="container mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <p
           className={`font-display font-bold text-lg ${textClass} text-center sm:text-left`}
         >
-          <Zap className="inline w-5 h-5 mr-2" />
+          <motion.span
+            className="inline-block mr-2"
+            whileHover={{ rotate: 15, scale: 1.3 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+          >
+            <Zap className="inline w-5 h-5" />
+          </motion.span>
           {text}
         </p>
         <Button

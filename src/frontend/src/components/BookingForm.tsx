@@ -9,11 +9,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useAddBooking } from "@/hooks/useQueries";
-import { AlertCircle, CheckCircle, Loader2, Zap } from "lucide-react";
+import {
+  Check,
+  CheckCircle,
+  Copy,
+  Loader2,
+  MessageSquare,
+  Zap,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { toast } from "sonner";
+
+const SHOP_PHONE = "918985866377"; // +91 08985866377 in sms: format (no +, no spaces)
 
 const packageOptions = [
   "VR Zombie Shooter",
@@ -47,11 +54,19 @@ const initialForm: FormState = {
   message: "",
 };
 
+function generateBookingId(): string {
+  const digits = Math.floor(100000 + Math.random() * 900000);
+  return `VR-${digits}`;
+}
+
 export function BookingForm() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [success, setSuccess] = useState(false);
-  const { mutateAsync: addBooking, isPending, isError } = useAddBooking();
+  const [bookingId, setBookingId] = useState("");
+  const [bookedName, setBookedName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: Partial<FormState> = {};
@@ -71,30 +86,32 @@ export function BookingForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-
-    const dateMs = new Date(form.date).getTime();
-    const dateNs = BigInt(dateMs) * 1_000_000n;
-
-    try {
-      await addBooking({
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        date: dateNs,
-        gamePackage: form.gamePackage,
-        groupSize: BigInt(form.groupSize),
-        message: form.message.trim() || null,
-      });
-      setSuccess(true);
-      setForm(initialForm);
-      toast.success("Booking confirmed! We'll call you to confirm your slot.");
-    } catch {
-      toast.error("Booking failed. Please try WhatsApp or call us directly.");
-    }
+    setIsSubmitting(true);
+    await new Promise((r) => setTimeout(r, 600));
+    const id = generateBookingId();
+    setBookingId(id);
+    setBookedName(form.name.trim());
+    setSuccess(true);
+    setForm(initialForm);
+    setIsSubmitting(false);
   };
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const getSmsLink = () => {
+    const body = encodeURIComponent(
+      `Hi VR Hub, I just booked a session. My Booking ID is ${bookingId} and my name is ${bookedName}.`,
+    );
+    return `sms:+91${SHOP_PHONE.replace(/^91/, "")}?body=${body}`;
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(bookingId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const inputClass =
@@ -127,9 +144,9 @@ export function BookingForm() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
+          whileHover={{ scale: 1.01 }}
           className="rounded-2xl border border-border bg-card p-6 md:p-8 relative overflow-hidden"
         >
-          {/* Decorative corner glow */}
           <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-neon-blue/5 blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full bg-neon-purple/5 blur-3xl pointer-events-none" />
 
@@ -150,6 +167,65 @@ export function BookingForm() {
                 <p className="text-muted-foreground mb-6">
                   We'll call you shortly to confirm your gaming slot.
                 </p>
+
+                <div className="inline-block bg-background border-2 border-neon-blue rounded-xl px-8 py-5 mb-6">
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
+                    Your Booking ID
+                  </p>
+                  <p className="font-display font-black text-4xl text-neon-blue glow-blue tracking-wider mb-3">
+                    {bookingId}
+                  </p>
+                  <Button
+                    data-ocid="booking.copy.button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopy}
+                    className="border-neon-blue text-neon-blue hover:bg-neon-blue/10 hover:text-neon-blue mb-3 font-semibold"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4 mr-1.5" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-1.5" />
+                        Copy ID
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-sm text-white font-semibold">
+                    📍 Show this code at the counter to start your session.
+                  </p>
+                </div>
+
+                {/* SMS Button */}
+                <div className="mb-6">
+                  <a href={getSmsLink()}>
+                    <Button
+                      size="lg"
+                      className="bg-neon-purple text-white hover:bg-neon-purple/90 font-bold shadow-lg w-full sm:w-auto"
+                    >
+                      <MessageSquare className="w-5 h-5 mr-2" />
+                      Send My Booking Code to the Shop
+                    </Button>
+                  </a>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Opens your messaging app with the booking code pre-filled.
+                  </p>
+                </div>
+
+                <div className="text-xs text-muted-foreground mb-6 space-y-1">
+                  <p>
+                    📍 2nd Floor, Al Quraishi Plex, Maruthi Nagar, Santosh
+                    Nagar, Hyderabad
+                  </p>
+                  <p>
+                    📞 089858 66377 &nbsp;|&nbsp; ⏰ 11:00 AM – 11:00 PM (All
+                    Days)
+                  </p>
+                </div>
+
                 <Button
                   onClick={() => setSuccess(false)}
                   className="bg-neon-blue text-background hover:bg-neon-blue/90"
@@ -166,18 +242,7 @@ export function BookingForm() {
                 onSubmit={handleSubmit}
                 className="space-y-5"
               >
-                {isError && (
-                  <div
-                    data-ocid="booking.error_state"
-                    className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/40 text-destructive text-sm"
-                  >
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    Connection failed. Try WhatsApp or call us at 089858 66377.
-                  </div>
-                )}
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  {/* Name */}
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="booking-name"
@@ -198,7 +263,6 @@ export function BookingForm() {
                     )}
                   </div>
 
-                  {/* Phone */}
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="booking-phone"
@@ -220,7 +284,6 @@ export function BookingForm() {
                     )}
                   </div>
 
-                  {/* Date */}
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="booking-date"
@@ -242,7 +305,6 @@ export function BookingForm() {
                     )}
                   </div>
 
-                  {/* Group Size */}
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="booking-group"
@@ -269,7 +331,6 @@ export function BookingForm() {
                   </div>
                 </div>
 
-                {/* Package */}
                 <div className="space-y-1.5">
                   <Label className="text-foreground font-semibold">
                     Game / Package *
@@ -299,7 +360,6 @@ export function BookingForm() {
                   )}
                 </div>
 
-                {/* Message */}
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="booking-message"
@@ -321,11 +381,11 @@ export function BookingForm() {
                 <Button
                   data-ocid="booking.submit.button"
                   type="submit"
-                  disabled={isPending}
+                  disabled={isSubmitting}
                   size="lg"
                   className="w-full bg-neon-blue text-background font-bold text-lg py-6 hover:bg-neon-blue/90 animate-pulse-glow shadow-neon-blue"
                 >
-                  {isPending ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2
                         data-ocid="booking.loading_state"
@@ -336,7 +396,7 @@ export function BookingForm() {
                   ) : (
                     <>
                       <Zap className="w-5 h-5" />
-                      Confirm Booking
+                      Book Now
                     </>
                   )}
                 </Button>

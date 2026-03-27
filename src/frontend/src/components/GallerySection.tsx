@@ -62,10 +62,11 @@ export function GallerySection() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
+              whileHover={{ scale: 1.04, y: -6 }}
+              style={{ aspectRatio: i === 0 ? "16/9" : "4/3" }}
               className={`relative overflow-hidden rounded-xl group cursor-pointer ${
                 i === 0 ? "md:col-span-2 row-span-1" : ""
               }`}
-              style={{ aspectRatio: i === 0 ? "16/9" : "4/3" }}
             >
               <img
                 src={img.src}

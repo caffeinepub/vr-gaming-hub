@@ -68,10 +68,12 @@ export function useAddBooking() {
       message: string | null;
     }) => {
       if (!actor) throw new Error("Not connected");
+      // bookingId is generated externally; pass empty string as placeholder
       return actor.addBooking(
+        "",
         name,
         phone,
-        date,
+        date as unknown as string,
         gamePackage,
         groupSize,
         message,

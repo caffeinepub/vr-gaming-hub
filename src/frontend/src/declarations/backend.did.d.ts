@@ -11,8 +11,9 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export interface Booking {
+  'bookingId' : string,
   'gamePackage' : string,
-  'date' : Time,
+  'date' : string,
   'name' : string,
   'message' : [] | [string],
   'phone' : string,
@@ -27,9 +28,10 @@ export interface Score {
 export type Time = bigint;
 export interface _SERVICE {
   'addBooking' : ActorMethod<
-    [string, string, Time, string, bigint, [] | [string]],
+    [string, string, string, string, string, bigint, [] | [string]],
     undefined
   >,
+  'deleteBooking' : ActorMethod<[string], undefined>,
   'getBookings' : ActorMethod<[], Array<Booking>>,
   'getGlobalLeaderboard' : ActorMethod<[], Array<Score>>,
   'getLeaderboard' : ActorMethod<[string], Array<Score>>,

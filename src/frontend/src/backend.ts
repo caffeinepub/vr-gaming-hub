@@ -90,8 +90,9 @@ export class ExternalBlob {
     }
 }
 export interface Booking {
+    bookingId: string;
     gamePackage: string;
-    date: Time;
+    date: string;
     name: string;
     message?: string;
     phone: string;
@@ -105,26 +106,41 @@ export interface Score {
     playerName: string;
 }
 export interface backendInterface {
-    addBooking(name: string, phone: string, date: Time, gamePackage: string, groupSize: bigint, message: string | null): Promise<void>;
+    addBooking(bookingId: string, name: string, phone: string, date: string, gamePackage: string, groupSize: bigint, message: string | null): Promise<void>;
+    deleteBooking(bookingId: string): Promise<void>;
     getBookings(): Promise<Array<Booking>>;
     getGlobalLeaderboard(): Promise<Array<Score>>;
     getLeaderboard(game: string): Promise<Array<Score>>;
     submitScore(playerName: string, game: string, score: bigint): Promise<void>;
 }
-import type { Booking as _Booking, Time as _Time } from "./declarations/backend.did.d.ts";
+import type { Booking as _Booking } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async addBooking(arg0: string, arg1: string, arg2: Time, arg3: string, arg4: bigint, arg5: string | null): Promise<void> {
+    async addBooking(arg0: string, arg1: string, arg2: string, arg3: string, arg4: string, arg5: bigint, arg6: string | null): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.addBooking(arg0, arg1, arg2, arg3, arg4, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg5));
+                const result = await this.actor.addBooking(arg0, arg1, arg2, arg3, arg4, arg5, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg6));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addBooking(arg0, arg1, arg2, arg3, arg4, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg5));
+            const result = await this.actor.addBooking(arg0, arg1, arg2, arg3, arg4, arg5, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg6));
+            return result;
+        }
+    }
+    async deleteBooking(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteBooking(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteBooking(arg0);
             return result;
         }
     }
@@ -192,21 +208,24 @@ function from_candid_opt_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Ar
     return value.length === 0 ? null : value[0];
 }
 function from_candid_record_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    bookingId: string;
     gamePackage: string;
-    date: _Time;
+    date: string;
     name: string;
     message: [] | [string];
     phone: string;
     groupSize: bigint;
 }): {
+    bookingId: string;
     gamePackage: string;
-    date: Time;
+    date: string;
     name: string;
     message?: string;
     phone: string;
     groupSize: bigint;
 } {
     return {
+        bookingId: value.bookingId,
         gamePackage: value.gamePackage,
         date: value.date,
         name: value.name,

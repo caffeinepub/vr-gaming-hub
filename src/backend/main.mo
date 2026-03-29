@@ -7,22 +7,25 @@ import Nat "mo:core/Nat";
 import Int "mo:core/Int";
 import Runtime "mo:core/Runtime";
 import List "mo:core/List";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   type Booking = {
+    bookingId : Text;
     name : Text;
     phone : Text;
-    date : Time.Time;
+    date : Text;
     gamePackage : Text;
     groupSize : Nat;
     message : ?Text;
   };
 
-  // Booking System
   let bookings = Map.empty<Text, Booking>();
 
-  public shared ({ caller }) func addBooking(name : Text, phone : Text, date : Time.Time, gamePackage : Text, groupSize : Nat, message : ?Text) : async () {
+  public shared ({ caller }) func addBooking(bookingId : Text, name : Text, phone : Text, date : Text, gamePackage : Text, groupSize : Nat, message : ?Text) : async () {
     let booking : Booking = {
+      bookingId;
       name;
       phone;
       date;
@@ -30,11 +33,18 @@ actor {
       groupSize;
       message;
     };
-    bookings.add(name, booking);
+    bookings.add(bookingId, booking);
   };
 
   public query ({ caller }) func getBookings() : async [Booking] {
     bookings.values().toArray();
+  };
+
+  public shared ({ caller }) func deleteBooking(bookingId : Text) : async () {
+    if (not bookings.containsKey(bookingId)) {
+      Runtime.trap("Booking not found");
+    };
+    bookings.remove(bookingId);
   };
 
   // Leaderboard System

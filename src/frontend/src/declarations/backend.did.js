@@ -8,15 +8,16 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const Time = IDL.Int;
 export const Booking = IDL.Record({
+  'bookingId' : IDL.Text,
   'gamePackage' : IDL.Text,
-  'date' : Time,
+  'date' : IDL.Text,
   'name' : IDL.Text,
   'message' : IDL.Opt(IDL.Text),
   'phone' : IDL.Text,
   'groupSize' : IDL.Nat,
 });
+export const Time = IDL.Int;
 export const Score = IDL.Record({
   'date' : Time,
   'game' : IDL.Text,
@@ -26,10 +27,19 @@ export const Score = IDL.Record({
 
 export const idlService = IDL.Service({
   'addBooking' : IDL.Func(
-      [IDL.Text, IDL.Text, Time, IDL.Text, IDL.Nat, IDL.Opt(IDL.Text)],
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Nat,
+        IDL.Opt(IDL.Text),
+      ],
       [],
       [],
     ),
+  'deleteBooking' : IDL.Func([IDL.Text], [], []),
   'getBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
   'getGlobalLeaderboard' : IDL.Func([], [IDL.Vec(Score)], ['query']),
   'getLeaderboard' : IDL.Func([IDL.Text], [IDL.Vec(Score)], ['query']),
@@ -39,15 +49,16 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const Time = IDL.Int;
   const Booking = IDL.Record({
+    'bookingId' : IDL.Text,
     'gamePackage' : IDL.Text,
-    'date' : Time,
+    'date' : IDL.Text,
     'name' : IDL.Text,
     'message' : IDL.Opt(IDL.Text),
     'phone' : IDL.Text,
     'groupSize' : IDL.Nat,
   });
+  const Time = IDL.Int;
   const Score = IDL.Record({
     'date' : Time,
     'game' : IDL.Text,
@@ -57,10 +68,19 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     'addBooking' : IDL.Func(
-        [IDL.Text, IDL.Text, Time, IDL.Text, IDL.Nat, IDL.Opt(IDL.Text)],
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Nat,
+          IDL.Opt(IDL.Text),
+        ],
         [],
         [],
       ),
+    'deleteBooking' : IDL.Func([IDL.Text], [], []),
     'getBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
     'getGlobalLeaderboard' : IDL.Func([], [IDL.Vec(Score)], ['query']),
     'getLeaderboard' : IDL.Func([IDL.Text], [IDL.Vec(Score)], ['query']),

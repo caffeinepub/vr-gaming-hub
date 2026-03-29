@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor } from "@/hooks/useActor";
 import {
   Check,
   CheckCircle,
@@ -60,6 +61,7 @@ function generateBookingId(): string {
 }
 
 export function BookingForm() {
+  const { actor } = useActor();
   const [form, setForm] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [success, setSuccess] = useState(false);
@@ -91,6 +93,24 @@ export function BookingForm() {
     const id = generateBookingId();
     setBookingId(id);
     setBookedName(form.name.trim());
+
+    // Fire-and-forget: save to backend
+    if (actor) {
+      actor
+        .addBooking(
+          id,
+          form.name.trim(),
+          form.phone.trim(),
+          form.date,
+          form.gamePackage,
+          BigInt(form.groupSize),
+          form.message.trim() || null,
+        )
+        .catch(() => {
+          // silently ignore errors
+        });
+    }
+
     setSuccess(true);
     setForm(initialForm);
     setIsSubmitting(false);

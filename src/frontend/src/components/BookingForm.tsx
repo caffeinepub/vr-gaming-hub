@@ -24,12 +24,6 @@ import { toast } from "sonner";
 const SHOP_PHONE = "918985866377";
 
 const packageOptions = [
-  { label: "VR Zombie Shooter", price: null },
-  { label: "VR Cricket", price: null },
-  { label: "Racing Simulator", price: null },
-  { label: "Multiplayer VR Battles", price: null },
-  { label: "PS5 Gaming", price: null },
-  { label: "Party Games", price: null },
   { label: "Single Game Session (\u20b9199)", price: 199, isGroup: false },
   { label: "30 Minute VR Pass (\u20b9349)", price: 349, isGroup: false },
   { label: "1 Hour Unlimited (\u20b9599)", price: 599, isGroup: false },
@@ -75,6 +69,9 @@ export function BookingForm() {
   const [bookingId, setBookingId] = useState("");
   const [bookedName, setBookedName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentInitiated, setPaymentInitiated] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [transactionId, setTransactionId] = useState("");
 
   const totalAmount = calcTotal(form.gamePackage, Number(form.groupSize) || 1);
 
@@ -131,12 +128,21 @@ export function BookingForm() {
     setBookedName(form.name.trim());
     setSuccess(true);
     setForm(initialForm);
+    setPaymentInitiated(false);
+    setPaymentConfirmed(false);
+    setTransactionId("");
     setIsSubmitting(false);
   };
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    // Reset payment state if package or group size changes
+    if (field === "gamePackage" || field === "groupSize") {
+      setPaymentInitiated(false);
+      setPaymentConfirmed(false);
+      setTransactionId("");
+    }
   };
 
   const getSmsLink = () => {
@@ -165,6 +171,9 @@ export function BookingForm() {
 
   const inputClass =
     "bg-card border-border focus:border-neon-blue focus:ring-neon-blue/30 text-foreground placeholder:text-muted-foreground";
+
+  // Book Now is visible only when transaction ID has been entered
+  const canShowBookNow = transactionId.trim().length > 0;
 
   return (
     <section id="booking" className="py-20 relative overflow-hidden">
@@ -481,7 +490,11 @@ export function BookingForm() {
 
                 {/* UPI Pay button — shown only when a priced package is selected */}
                 {totalAmount !== null && (
-                  <a href={getUpiLink()} className="block">
+                  <a
+                    href={getUpiLink()}
+                    className="block"
+                    onClick={() => setPaymentInitiated(true)}
+                  >
                     <Button
                       type="button"
                       size="lg"
@@ -492,28 +505,113 @@ export function BookingForm() {
                   </a>
                 )}
 
-                <Button
-                  data-ocid="booking.submit.button"
-                  type="submit"
-                  disabled={isSubmitting}
-                  size="lg"
-                  className="w-full bg-neon-blue text-background font-bold text-lg py-6 hover:bg-neon-blue/90 animate-pulse-glow shadow-neon-blue"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2
-                        data-ocid="booking.loading_state"
-                        className="w-5 h-5 animate-spin"
+                {/* Payment confirmation section — shown after Pay button is clicked */}
+                {totalAmount !== null && paymentInitiated && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-xl border border-neon-green/30 bg-neon-green/5 px-4 py-4 space-y-4"
+                  >
+                    <p className="text-sm text-muted-foreground">
+                      ✅ After completing payment, check the box below and enter
+                      your Transaction ID to confirm your booking.
+                    </p>
+
+                    <label
+                      data-ocid="booking.payment.checkbox"
+                      className="flex items-center gap-3 cursor-pointer group"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={paymentConfirmed}
+                        onChange={(e) => setPaymentConfirmed(e.target.checked)}
+                        className="w-5 h-5 rounded border-neon-green/50 bg-card accent-neon-green cursor-pointer"
                       />
-                      Confirming Booking...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-5 h-5" />
-                      Book Now
-                    </>
-                  )}
-                </Button>
+                      <span className="text-sm font-semibold text-foreground group-hover:text-neon-green transition-colors">
+                        I have completed the UPI payment ✓
+                      </span>
+                    </label>
+
+                    {/* Transaction ID field */}
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="booking-txn-id"
+                        className="text-foreground font-semibold"
+                      >
+                        Transaction ID (Last 4 digits) *
+                      </Label>
+                      <Input
+                        id="booking-txn-id"
+                        data-ocid="booking.transaction_id.input"
+                        placeholder="e.g. 4821"
+                        maxLength={10}
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value)}
+                        className={inputClass}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Check your UPI payment receipt and enter the last 4
+                        digits of the Transaction ID.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Book Now button logic */}
+                {totalAmount === null ? (
+                  // No price package — show Book Now directly
+                  <Button
+                    data-ocid="booking.submit.button"
+                    type="submit"
+                    disabled={isSubmitting}
+                    size="lg"
+                    className="w-full bg-neon-blue text-background font-bold text-lg py-6 hover:bg-neon-blue/90 animate-pulse-glow shadow-neon-blue"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2
+                          data-ocid="booking.loading_state"
+                          className="w-5 h-5 animate-spin"
+                        />
+                        Confirming Booking...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-5 h-5" />
+                        Book Now
+                      </>
+                    )}
+                  </Button>
+                ) : paymentInitiated && canShowBookNow ? (
+                  // Priced package + payment initiated + transaction ID entered — show Book Now
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <Button
+                      data-ocid="booking.submit.button"
+                      type="submit"
+                      disabled={isSubmitting || !paymentConfirmed}
+                      size="lg"
+                      className="w-full bg-neon-blue text-background font-bold text-lg py-6 hover:bg-neon-blue/90 animate-pulse-glow shadow-neon-blue disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2
+                            data-ocid="booking.loading_state"
+                            className="w-5 h-5 animate-spin"
+                          />
+                          Confirming Booking...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-5 h-5" />
+                          Book Now
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
+                ) : null}
               </motion.form>
             )}
           </AnimatePresence>

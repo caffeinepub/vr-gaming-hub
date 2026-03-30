@@ -1,5 +1,6 @@
 import type { Booking } from "@/backend";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -9,15 +10,29 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useActor } from "@/hooks/useActor";
-import { Loader2, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+const ADMIN_PASSWORD = "vrhub2024";
 
 export function AdminDashboard() {
   const { actor, isFetching } = useActor();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   const fetchBookings = useCallback(async () => {
     if (!actor) return;
@@ -33,10 +48,20 @@ export function AdminDashboard() {
   }, [actor]);
 
   useEffect(() => {
-    if (actor && !isFetching) {
+    if (authenticated && actor && !isFetching) {
       fetchBookings();
     }
-  }, [actor, isFetching, fetchBookings]);
+  }, [authenticated, actor, isFetching, fetchBookings]);
+
+  const handleLogin = () => {
+    if (passwordInput === ADMIN_PASSWORD) {
+      setAuthenticated(true);
+      setAuthError("");
+    } else {
+      setAuthError("Incorrect password. Please try again.");
+      setPasswordInput("");
+    }
+  };
 
   const handleDelete = async (bookingId: string) => {
     if (!actor) return;
@@ -52,6 +77,67 @@ export function AdminDashboard() {
     }
   };
 
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="w-full max-w-sm mx-4">
+          <div className="border border-border rounded-2xl bg-card/80 backdrop-blur-sm p-8 shadow-2xl">
+            <div className="flex flex-col items-center mb-8">
+              <div className="w-14 h-14 rounded-full bg-neon-blue/10 border border-neon-blue/30 flex items-center justify-center mb-4">
+                <Lock className="w-7 h-7 text-neon-blue" />
+              </div>
+              <h1 className="font-display font-black text-2xl text-foreground">
+                Admin Access
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                VRHub Owner Dashboard
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  className="pr-10 bg-background border-border focus:border-neon-blue"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+
+              {authError && (
+                <p className="text-sm text-destructive text-center">
+                  {authError}
+                </p>
+              )}
+
+              <Button
+                onClick={handleLogin}
+                disabled={!passwordInput}
+                className="w-full bg-neon-blue hover:bg-neon-blue/90 text-black font-bold"
+              >
+                Unlock Dashboard
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
@@ -65,19 +151,30 @@ export function AdminDashboard() {
               <p className="text-xs text-muted-foreground">VRHub Bookings</p>
             </div>
           </div>
-          <Button
-            data-ocid="admin.refresh.button"
-            variant="outline"
-            size="sm"
-            onClick={fetchBookings}
-            disabled={loading || isFetching}
-            className="border-neon-blue text-neon-blue hover:bg-neon-blue/10 hover:text-neon-blue"
-          >
-            <RefreshCw
-              className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              data-ocid="admin.refresh.button"
+              variant="outline"
+              size="sm"
+              onClick={fetchBookings}
+              disabled={loading || isFetching}
+              className="border-neon-blue text-neon-blue hover:bg-neon-blue/10 hover:text-neon-blue"
+            >
+              <RefreshCw
+                className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setAuthenticated(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Lock className="w-4 h-4 mr-1" />
+              Lock
+            </Button>
+          </div>
         </div>
       </header>
 

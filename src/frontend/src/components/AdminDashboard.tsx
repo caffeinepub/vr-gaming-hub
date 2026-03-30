@@ -27,7 +27,7 @@ const ADMIN_PASSWORD = "vrhub2024";
 export function AdminDashboard() {
   const { actor, isFetching } = useActor();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
@@ -35,7 +35,10 @@ export function AdminDashboard() {
   const [authError, setAuthError] = useState("");
 
   const fetchBookings = useCallback(async () => {
-    if (!actor) return;
+    if (!actor) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const data = await actor.getBookings();

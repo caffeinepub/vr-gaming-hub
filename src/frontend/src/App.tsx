@@ -14,6 +14,7 @@ import { Navbar } from "./components/Navbar";
 import { PartySection } from "./components/PartySection";
 import { PricingSection } from "./components/PricingSection";
 import { ReviewsSection } from "./components/ReviewsSection";
+import { VerifiedTicketPage } from "./components/VerifiedTicketPage";
 import { WhyChooseUs } from "./components/WhyChooseUs";
 
 function HomePage() {
@@ -62,9 +63,24 @@ function HomePage() {
 export default function App() {
   const path = window.location.pathname;
 
+  if (path === "/admin-dashboard")
+    return (
+      <>
+        <AdminDashboard />
+        <Toaster position="bottom-left" theme="dark" />
+      </>
+    );
+  if (path === "/verified-ticket")
+    return (
+      <>
+        <VerifiedTicketPage />
+        <Toaster position="bottom-left" theme="dark" />
+      </>
+    );
+
   return (
     <>
-      {path === "/admin-dashboard" ? <AdminDashboard /> : <HomePage />}
+      <HomePage />
       <Toaster position="bottom-left" theme="dark" />
     </>
   );

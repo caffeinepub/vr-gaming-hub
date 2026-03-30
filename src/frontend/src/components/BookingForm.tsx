@@ -11,32 +11,38 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useActor } from "@/hooks/useActor";
 import {
-  Check,
   CheckCircle,
-  Copy,
+  Download,
   Loader2,
   MessageSquare,
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
+import { toast } from "sonner";
 
-const SHOP_PHONE = "918985866377"; // +91 08985866377 in sms: format (no +, no spaces)
+const SHOP_PHONE = "918985866377";
 
 const packageOptions = [
-  "VR Zombie Shooter",
-  "VR Cricket",
-  "Racing Simulator",
-  "Multiplayer VR Battles",
-  "PS5 Gaming",
-  "Party Games",
-  "Single Game Session (₹199)",
-  "30 Minute VR Pass (₹349)",
-  "1 Hour Unlimited Gaming (₹599)",
-  "Group Package – ₹449/person",
-  "Birthday Party Package (₹2999)",
+  { label: "VR Zombie Shooter", price: null },
+  { label: "VR Cricket", price: null },
+  { label: "Racing Simulator", price: null },
+  { label: "Multiplayer VR Battles", price: null },
+  { label: "PS5 Gaming", price: null },
+  { label: "Party Games", price: null },
+  { label: "Single Game Session (\u20b9199)", price: 199, isGroup: false },
+  { label: "30 Minute VR Pass (\u20b9349)", price: 349, isGroup: false },
+  { label: "1 Hour Unlimited (\u20b9599)", price: 599, isGroup: false },
+  { label: "Group Package \u2013 \u20b9449/person", price: 449, isGroup: true },
+  { label: "Birthday Party Package (\u20b92999)", price: 2999, isGroup: false },
 ];
+
+function calcTotal(packageLabel: string, groupSize: number): number | null {
+  const pkg = packageOptions.find((p) => p.label === packageLabel);
+  if (!pkg || pkg.price === null) return null;
+  if (pkg.isGroup) return pkg.price * Math.max(1, groupSize);
+  return pkg.price;
+}
 
 interface FormState {
   name: string;
@@ -69,7 +75,13 @@ export function BookingForm() {
   const [bookingId, setBookingId] = useState("");
   const [bookedName, setBookedName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [copied, setCopied] = useState(false);
+
+  const totalAmount = calcTotal(form.gamePackage, Number(form.groupSize) || 1);
+
+  const getUpiLink = () => {
+    if (totalAmount === null) return "#";
+    return `upi://pay?pa=azhar.tabrez2021-3@okhdfcbank&pn=VR_HUB_HYD&am=${totalAmount}&cu=INR`;
+  };
 
   const validate = (): boolean => {
     const newErrors: Partial<FormState> = {};
@@ -90,28 +102,33 @@ export function BookingForm() {
     e.preventDefault();
     if (!validate()) return;
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const id = generateBookingId();
-    setBookingId(id);
-    setBookedName(form.name.trim());
 
-    // Fire-and-forget: save to backend
-    if (actor) {
-      actor
-        .addBooking(
-          id,
-          form.name.trim(),
-          form.phone.trim(),
-          form.date,
-          form.gamePackage,
-          BigInt(form.groupSize),
-          form.message.trim() || null,
-        )
-        .catch(() => {
-          // silently ignore errors
-        });
+    if (!actor) {
+      toast.error("Connection not ready, please try again in a moment");
+      setIsSubmitting(false);
+      return;
     }
 
+    const id = generateBookingId();
+
+    try {
+      await actor.addBooking(
+        id,
+        form.name.trim(),
+        form.phone.trim(),
+        form.date,
+        form.gamePackage,
+        BigInt(form.groupSize),
+        form.message.trim() || null,
+      );
+    } catch (_err) {
+      toast.error("Failed to save booking, please try again");
+      setIsSubmitting(false);
+      return;
+    }
+
+    setBookingId(id);
+    setBookedName(form.name.trim());
     setSuccess(true);
     setForm(initialForm);
     setIsSubmitting(false);
@@ -129,10 +146,21 @@ export function BookingForm() {
     return `sms:+91${SHOP_PHONE.replace(/^91/, "")}?body=${body}`;
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(bookingId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const getQrValue = () => {
+    const base = window.location.origin;
+    return `${base}/verified-ticket?name=${encodeURIComponent(bookedName)}&id=${encodeURIComponent(bookingId)}`;
+  };
+
+  const getQrImageUrl = () => {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(getQrValue())}&bgcolor=ffffff&color=0a0a1a&margin=10`;
+  };
+
+  const handleDownload = async () => {
+    const link = document.createElement("a");
+    link.download = `VRHub-Ticket-${bookingId}.png`;
+    link.href = getQrImageUrl();
+    link.target = "_blank";
+    link.click();
   };
 
   const inputClass =
@@ -185,64 +213,71 @@ export function BookingForm() {
                 <h3 className="font-display font-black text-2xl text-foreground mb-2">
                   Booking Confirmed! 🎮
                 </h3>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground mb-8">
                   We'll call you shortly to confirm your gaming slot.
                 </p>
 
-                {/* Booking ID block */}
-                <div className="inline-block bg-background border-2 border-neon-blue rounded-xl px-8 py-5 mb-6">
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
-                    Your Booking ID
-                  </p>
-                  <p className="font-display font-black text-4xl text-neon-blue glow-blue tracking-wider mb-3">
-                    {bookingId}
-                  </p>
-                  <Button
-                    data-ocid="booking.copy.button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopy}
-                    className="border-neon-blue text-neon-blue hover:bg-neon-blue/10 hover:text-neon-blue mb-3 font-semibold"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-4 h-4 mr-1.5" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4 mr-1.5" />
-                        Copy ID
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-sm text-white font-semibold">
-                    📍 Show this code at the counter to start your session.
-                  </p>
-                </div>
-
-                {/* QR Code block */}
+                {/* QR Code block with scanning glow */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.4 }}
                   className="flex flex-col items-center mb-6"
                 >
-                  <div className="bg-background border border-neon-blue/30 rounded-2xl p-4 inline-block">
-                    <div className="bg-white rounded-lg p-3">
-                      <QRCodeSVG
-                        value={`VR Hub Booking - ${bookedName} - ${bookingId}`}
-                        size={192}
-                        bgColor="#ffffff"
-                        fgColor="#0a0a1a"
-                        level="M"
-                      />
-                    </div>
+                  <div className="relative inline-block">
+                    {/* Scanning glow ring */}
+                    <motion.div
+                      animate={{
+                        boxShadow: [
+                          "0 0 0px 0px rgba(0,200,255,0)",
+                          "0 0 24px 8px rgba(0,200,255,0.45)",
+                          "0 0 40px 16px rgba(0,200,255,0.2)",
+                          "0 0 24px 8px rgba(0,200,255,0.45)",
+                          "0 0 0px 0px rgba(0,200,255,0)",
+                        ],
+                      }}
+                      transition={{
+                        duration: 2.4,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                      }}
+                      className="rounded-2xl"
+                    >
+                      <div className="bg-background border-2 border-neon-blue/40 rounded-2xl p-4 inline-block">
+                        <div className="bg-white rounded-lg p-3">
+                          <img
+                            src={getQrImageUrl()}
+                            alt={`QR Code for booking ${bookingId}`}
+                            width={200}
+                            height={200}
+                            className="rounded"
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Corner scan lines */}
+                    <span className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-neon-blue rounded-tl-sm" />
+                    <span className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-neon-blue rounded-tr-sm" />
+                    <span className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-neon-blue rounded-bl-sm" />
+                    <span className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-neon-blue rounded-br-sm" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-3 max-w-xs leading-relaxed">
+
+                  <p className="text-xs text-muted-foreground mt-4 max-w-xs leading-relaxed">
                     🎟️ Save this ticket and show the QR code at the shop counter
                     to play.
                   </p>
+
+                  {/* Download button */}
+                  <Button
+                    onClick={handleDownload}
+                    size="sm"
+                    className="mt-3 bg-neon-green/20 text-neon-green border border-neon-green/50 hover:bg-neon-green/30 font-semibold"
+                    variant="outline"
+                  >
+                    <Download className="w-4 h-4 mr-1.5" />
+                    Download Ticket
+                  </Button>
                 </motion.div>
 
                 {/* SMS Button */}
@@ -393,8 +428,8 @@ export function BookingForm() {
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-border">
                       {packageOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>
-                          {opt}
+                        <SelectItem key={opt.label} value={opt.label}>
+                          {opt.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -405,6 +440,26 @@ export function BookingForm() {
                     </p>
                   )}
                 </div>
+
+                {/* Total amount display */}
+                {totalAmount !== null && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between rounded-xl border border-neon-blue/30 bg-neon-blue/5 px-4 py-3"
+                  >
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Total Amount
+                      {packageOptions.find((p) => p.label === form.gamePackage)
+                        ?.isGroup
+                        ? ` (${form.groupSize} × ₹449)`
+                        : ""}
+                    </span>
+                    <span className="text-xl font-black text-neon-blue glow-blue">
+                      ₹{totalAmount}
+                    </span>
+                  </motion.div>
+                )}
 
                 <div className="space-y-1.5">
                   <Label
@@ -423,6 +478,19 @@ export function BookingForm() {
                     className={inputClass}
                   />
                 </div>
+
+                {/* UPI Pay button — shown only when a priced package is selected */}
+                {totalAmount !== null && (
+                  <a href={getUpiLink()} className="block">
+                    <Button
+                      type="button"
+                      size="lg"
+                      className="w-full bg-neon-green text-background font-bold text-lg py-6 hover:bg-neon-green/90 shadow-lg"
+                    >
+                      💳 Pay ₹{totalAmount} now
+                    </Button>
+                  </a>
+                )}
 
                 <Button
                   data-ocid="booking.submit.button"

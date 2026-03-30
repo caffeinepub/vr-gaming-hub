@@ -19,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 
 const SHOP_PHONE = "918985866377"; // +91 08985866377 in sms: format (no +, no spaces)
@@ -188,6 +189,7 @@ export function BookingForm() {
                   We'll call you shortly to confirm your gaming slot.
                 </p>
 
+                {/* Booking ID block */}
                 <div className="inline-block bg-background border-2 border-neon-blue rounded-xl px-8 py-5 mb-6">
                   <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
                     Your Booking ID
@@ -218,6 +220,30 @@ export function BookingForm() {
                     📍 Show this code at the counter to start your session.
                   </p>
                 </div>
+
+                {/* QR Code block */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.4 }}
+                  className="flex flex-col items-center mb-6"
+                >
+                  <div className="bg-background border border-neon-blue/30 rounded-2xl p-4 inline-block">
+                    <div className="bg-white rounded-lg p-3">
+                      <QRCodeSVG
+                        value={`VR Hub Booking - ${bookedName} - ${bookingId}`}
+                        size={192}
+                        bgColor="#ffffff"
+                        fgColor="#0a0a1a"
+                        level="M"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3 max-w-xs leading-relaxed">
+                    🎟️ Save this ticket and show the QR code at the shop counter
+                    to play.
+                  </p>
+                </motion.div>
 
                 {/* SMS Button */}
                 <div className="mb-6">

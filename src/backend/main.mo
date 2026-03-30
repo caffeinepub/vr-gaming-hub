@@ -7,9 +7,9 @@ import Nat "mo:core/Nat";
 import Int "mo:core/Int";
 import Runtime "mo:core/Runtime";
 import List "mo:core/List";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   type Booking = {
     bookingId : Text;

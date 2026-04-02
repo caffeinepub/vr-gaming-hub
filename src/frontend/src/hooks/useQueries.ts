@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Score } from "../backend.d";
+import type { BookingInput, Score } from "../backend";
 import { useActor } from "./useActor";
 
 export function useGlobalLeaderboard() {
@@ -52,32 +52,9 @@ export function useSubmitScore() {
 export function useAddBooking() {
   const { actor } = useActor();
   return useMutation({
-    mutationFn: async ({
-      name,
-      phone,
-      date,
-      gamePackage,
-      groupSize,
-      message,
-    }: {
-      name: string;
-      phone: string;
-      date: bigint;
-      gamePackage: string;
-      groupSize: bigint;
-      message: string | null;
-    }) => {
+    mutationFn: async (input: BookingInput) => {
       if (!actor) throw new Error("Not connected");
-      // bookingId is generated externally; pass empty string as placeholder
-      return actor.addBooking(
-        "",
-        name,
-        phone,
-        date as unknown as string,
-        gamePackage,
-        groupSize,
-        message,
-      );
+      return actor.addBooking(input);
     },
   });
 }

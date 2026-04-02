@@ -17,8 +17,19 @@ export interface Booking {
   'name' : string,
   'message' : [] | [string],
   'phone' : string,
+  'screenshot' : [] | [ExternalBlob],
   'groupSize' : bigint,
 }
+export interface BookingInput {
+  'gamePackage' : string,
+  'date' : string,
+  'name' : string,
+  'message' : [] | [string],
+  'phone' : string,
+  'screenshot' : [] | [ExternalBlob],
+  'groupSize' : bigint,
+}
+export type ExternalBlob = Uint8Array;
 export interface Score {
   'date' : Time,
   'game' : string,
@@ -26,11 +37,34 @@ export interface Score {
   'playerName' : string,
 }
 export type Time = bigint;
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
+}
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
+}
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
+}
 export interface _SERVICE {
-  'addBooking' : ActorMethod<
-    [string, string, string, string, string, bigint, [] | [string]],
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
+    [Array<Uint8Array>],
     undefined
   >,
+  '_caffeineStorageCreateCertificate' : ActorMethod<
+    [string],
+    _CaffeineStorageCreateCertificateResult
+  >,
+  '_caffeineStorageRefillCashier' : ActorMethod<
+    [[] | [_CaffeineStorageRefillInformation]],
+    _CaffeineStorageRefillResult
+  >,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
+  'addBooking' : ActorMethod<[BookingInput], string>,
   'deleteBooking' : ActorMethod<[string], undefined>,
   'getBookings' : ActorMethod<[], Array<Booking>>,
   'getGlobalLeaderboard' : ActorMethod<[], Array<Score>>,

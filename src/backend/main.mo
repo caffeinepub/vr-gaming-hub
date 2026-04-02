@@ -7,10 +7,14 @@ import Nat "mo:core/Nat";
 import Int "mo:core/Int";
 import Runtime "mo:core/Runtime";
 import List "mo:core/List";
+import Storage "blob-storage/Storage";
+import MixinStorage "blob-storage/Mixin";
 
 
 
 actor {
+  include MixinStorage();
+
   type Booking = {
     bookingId : Text;
     name : Text;
@@ -19,21 +23,32 @@ actor {
     gamePackage : Text;
     groupSize : Nat;
     message : ?Text;
+    screenshot : ?Storage.ExternalBlob;
   };
 
   let bookings = Map.empty<Text, Booking>();
+  var nextBookingId = 0;
 
-  public shared ({ caller }) func addBooking(bookingId : Text, name : Text, phone : Text, date : Text, gamePackage : Text, groupSize : Nat, message : ?Text) : async () {
+  type BookingInput = {
+    name : Text;
+    phone : Text;
+    date : Text;
+    gamePackage : Text;
+    groupSize : Nat;
+    message : ?Text;
+    screenshot : ?Storage.ExternalBlob;
+  };
+
+  public shared ({ caller }) func addBooking(input : BookingInput) : async Text {
+    let id = nextBookingId.toText();
+    nextBookingId += 1;
+
     let booking : Booking = {
-      bookingId;
-      name;
-      phone;
-      date;
-      gamePackage;
-      groupSize;
-      message;
+      input with
+      bookingId = id;
     };
-    bookings.add(bookingId, booking);
+    bookings.add(id, booking);
+    id;
   };
 
   public query ({ caller }) func getBookings() : async [Booking] {
@@ -99,3 +114,4 @@ actor {
     validGames.any(func(validGame) { Text.equal(game, validGame) });
   };
 };
+

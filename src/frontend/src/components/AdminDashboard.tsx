@@ -234,6 +234,9 @@ export function AdminDashboard() {
                   <TableHead className="text-neon-blue font-semibold">
                     Booking ID
                   </TableHead>
+                  <TableHead className="text-neon-blue font-semibold">
+                    Screenshot
+                  </TableHead>
                   <TableHead className="text-neon-blue font-semibold text-right">
                     Action
                   </TableHead>
@@ -259,6 +262,23 @@ export function AdminDashboard() {
                       <span className="font-mono text-neon-blue font-semibold text-sm bg-neon-blue/10 px-2 py-1 rounded">
                         {booking.bookingId}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      {booking.screenshot ? (
+                        <a
+                          href={booking.screenshot.getDirectURL()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img
+                            src={booking.screenshot.getDirectURL()}
+                            alt="Payment screenshot"
+                            className="w-14 h-14 object-cover rounded-lg border border-border hover:opacity-80 transition-opacity cursor-pointer"
+                          />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

@@ -1,3 +1,4 @@
+import { ExternalBlob } from "@/backend";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import {
   Download,
   Loader2,
   MessageSquare,
+  X,
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -38,6 +40,10 @@ function calcTotal(packageLabel: string, groupSize: number): number | null {
   return pkg.price;
 }
 
+const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
+  navigator.userAgent,
+);
+
 interface FormState {
   name: string;
   phone: string;
@@ -56,11 +62,6 @@ const initialForm: FormState = {
   message: "",
 };
 
-function generateBookingId(): string {
-  const digits = Math.floor(100000 + Math.random() * 900000);
-  return `VR-${digits}`;
-}
-
 export function BookingForm() {
   const { actor } = useActor();
   const [form, setForm] = useState<FormState>(initialForm);
@@ -70,14 +71,34 @@ export function BookingForm() {
   const [bookedName, setBookedName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentInitiated, setPaymentInitiated] = useState(false);
-  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
-  const [transactionId, setTransactionId] = useState("");
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotUploadProgress, setScreenshotUploadProgress] =
+    useState<number>(0);
+  const [showPayQrModal, setShowPayQrModal] = useState(false);
 
   const totalAmount = calcTotal(form.gamePackage, Number(form.groupSize) || 1);
 
   const getUpiLink = () => {
     if (totalAmount === null) return "#";
     return `upi://pay?pa=azhar.tabrez2021-3@okhdfcbank&pn=VR_HUB_HYD&am=${totalAmount}&cu=INR`;
+  };
+
+  const getPayQrUrl = () => {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(getUpiLink())}&bgcolor=ffffff&color=0a0a1a&margin=10`;
+  };
+
+  const handlePayClick = () => {
+    if (isMobile) {
+      window.open(getUpiLink(), "_blank");
+      setPaymentInitiated(true);
+    } else {
+      setShowPayQrModal(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowPayQrModal(false);
+    setPaymentInitiated(true);
   };
 
   const validate = (): boolean => {
@@ -106,42 +127,46 @@ export function BookingForm() {
       return;
     }
 
-    const id = generateBookingId();
-
     try {
-      await actor.addBooking(
-        id,
-        form.name.trim(),
-        form.phone.trim(),
-        form.date,
-        form.gamePackage,
-        BigInt(form.groupSize),
-        form.message.trim() || null,
-      );
+      let screenshotBlob: ExternalBlob | undefined;
+      if (screenshotFile) {
+        const bytes = new Uint8Array(await screenshotFile.arrayBuffer());
+        screenshotBlob = ExternalBlob.fromBytes(bytes).withUploadProgress(
+          (pct) => setScreenshotUploadProgress(pct),
+        );
+      }
+
+      const id = await actor.addBooking({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        date: form.date,
+        gamePackage: form.gamePackage,
+        groupSize: BigInt(form.groupSize),
+        message: form.message.trim() || undefined,
+        screenshot: screenshotBlob,
+      });
+
+      setBookingId(id);
+      setBookedName(form.name.trim());
+      setSuccess(true);
+      setForm(initialForm);
+      setPaymentInitiated(false);
+      setScreenshotFile(null);
+      setScreenshotUploadProgress(0);
     } catch (_err) {
       toast.error("Failed to save booking, please try again");
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    setBookingId(id);
-    setBookedName(form.name.trim());
-    setSuccess(true);
-    setForm(initialForm);
-    setPaymentInitiated(false);
-    setPaymentConfirmed(false);
-    setTransactionId("");
-    setIsSubmitting(false);
   };
 
   const setField = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
-    // Reset payment state if package or group size changes
     if (field === "gamePackage" || field === "groupSize") {
       setPaymentInitiated(false);
-      setPaymentConfirmed(false);
-      setTransactionId("");
+      setScreenshotFile(null);
+      setScreenshotUploadProgress(0);
     }
   };
 
@@ -172,12 +197,107 @@ export function BookingForm() {
   const inputClass =
     "bg-card border-border focus:border-neon-blue focus:ring-neon-blue/30 text-foreground placeholder:text-muted-foreground";
 
-  // Book Now is visible only when transaction ID has been entered
-  const canShowBookNow = transactionId.trim().length > 0;
+  const canShowBookNow = paymentInitiated && screenshotFile !== null;
 
   return (
     <section id="booking" className="py-20 relative overflow-hidden">
       <div className="absolute inset-0 cyber-grid opacity-20 pointer-events-none" />
+
+      {/* UPI QR Payment Modal (desktop only) */}
+      <AnimatePresence>
+        {showPayQrModal && totalAmount !== null && (
+          <motion.div
+            key="pay-qr-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backgroundColor: "rgba(0,0,0,0.75)" }}
+            onClick={handleCloseModal}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.88, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.88, y: 20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="relative bg-card border-2 border-neon-blue/50 rounded-2xl p-8 max-w-sm w-full shadow-2xl"
+              style={{ boxShadow: "0 0 40px rgba(0,200,255,0.2)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button
+                type="button"
+                data-ocid="booking.pay_qr.close_button"
+                onClick={handleCloseModal}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-neon-blue transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center">
+                <p className="text-neon-blue font-semibold uppercase tracking-widest text-xs mb-1">
+                  UPI Payment
+                </p>
+                <h3 className="font-display font-black text-xl text-foreground mb-1">
+                  Scan to Pay
+                </h3>
+                <p className="text-3xl font-black text-neon-blue glow-blue mb-5">
+                  ₹{totalAmount}
+                </p>
+
+                <div className="flex justify-center mb-4">
+                  <div className="relative inline-block">
+                    <motion.div
+                      animate={{
+                        boxShadow: [
+                          "0 0 0px 0px rgba(0,200,255,0)",
+                          "0 0 20px 6px rgba(0,200,255,0.4)",
+                          "0 0 0px 0px rgba(0,200,255,0)",
+                        ],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                      }}
+                      className="rounded-xl"
+                    >
+                      <div className="bg-white rounded-xl p-3 inline-block border-2 border-neon-blue/30">
+                        <img
+                          src={getPayQrUrl()}
+                          alt="UPI Payment QR Code"
+                          width={250}
+                          height={250}
+                          className="rounded"
+                        />
+                      </div>
+                    </motion.div>
+                    <span className="absolute top-1 left-1 w-5 h-5 border-t-2 border-l-2 border-neon-blue rounded-tl-sm" />
+                    <span className="absolute top-1 right-1 w-5 h-5 border-t-2 border-r-2 border-neon-blue rounded-tr-sm" />
+                    <span className="absolute bottom-1 left-1 w-5 h-5 border-b-2 border-l-2 border-neon-blue rounded-bl-sm" />
+                    <span className="absolute bottom-1 right-1 w-5 h-5 border-b-2 border-r-2 border-neon-blue rounded-br-sm" />
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground leading-relaxed mb-6">
+                  Scan this QR code with any UPI app (PhonePe, Google Pay,
+                  Paytm) on your phone to pay.
+                </p>
+
+                <Button
+                  data-ocid="booking.pay_qr.close_button"
+                  onClick={handleCloseModal}
+                  className="w-full bg-neon-blue text-background font-bold hover:bg-neon-blue/90"
+                >
+                  I've Paid — Continue Booking
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="container mx-auto px-4 max-w-3xl relative z-10">
         <motion.div
@@ -234,7 +354,6 @@ export function BookingForm() {
                   className="flex flex-col items-center mb-6"
                 >
                   <div className="relative inline-block">
-                    {/* Scanning glow ring */}
                     <motion.div
                       animate={{
                         boxShadow: [
@@ -265,7 +384,6 @@ export function BookingForm() {
                       </div>
                     </motion.div>
 
-                    {/* Corner scan lines */}
                     <span className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-neon-blue rounded-tl-sm" />
                     <span className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-neon-blue rounded-tr-sm" />
                     <span className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-neon-blue rounded-bl-sm" />
@@ -277,7 +395,6 @@ export function BookingForm() {
                     to play.
                   </p>
 
-                  {/* Download button */}
                   <Button
                     onClick={handleDownload}
                     size="sm"
@@ -289,7 +406,6 @@ export function BookingForm() {
                   </Button>
                 </motion.div>
 
-                {/* SMS Button */}
                 <div className="mb-6">
                   <a href={getSmsLink()}>
                     <Button
@@ -488,24 +604,20 @@ export function BookingForm() {
                   />
                 </div>
 
-                {/* UPI Pay button — shown only when a priced package is selected */}
+                {/* UPI Pay button */}
                 {totalAmount !== null && (
-                  <a
-                    href={getUpiLink()}
-                    className="block"
-                    onClick={() => setPaymentInitiated(true)}
+                  <Button
+                    data-ocid="booking.pay.primary_button"
+                    type="button"
+                    size="lg"
+                    onClick={handlePayClick}
+                    className="w-full bg-neon-green text-background font-bold text-lg py-6 hover:bg-neon-green/90 shadow-lg"
                   >
-                    <Button
-                      type="button"
-                      size="lg"
-                      className="w-full bg-neon-green text-background font-bold text-lg py-6 hover:bg-neon-green/90 shadow-lg"
-                    >
-                      💳 Pay ₹{totalAmount} now
-                    </Button>
-                  </a>
+                    💳 Pay ₹{totalAmount} now
+                  </Button>
                 )}
 
-                {/* Payment confirmation section — shown after Pay button is clicked */}
+                {/* Payment confirmation section with screenshot upload */}
                 {totalAmount !== null && paymentInitiated && (
                   <motion.div
                     initial={{ opacity: 0, y: -6 }}
@@ -513,53 +625,52 @@ export function BookingForm() {
                     className="rounded-xl border border-neon-green/30 bg-neon-green/5 px-4 py-4 space-y-4"
                   >
                     <p className="text-sm text-muted-foreground">
-                      ✅ After completing payment, check the box below and enter
-                      your Transaction ID to confirm your booking.
+                      ✅ After paying, upload a screenshot of your payment to
+                      confirm your booking.
                     </p>
 
-                    <label
-                      data-ocid="booking.payment.checkbox"
-                      className="flex items-center gap-3 cursor-pointer group"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={paymentConfirmed}
-                        onChange={(e) => setPaymentConfirmed(e.target.checked)}
-                        className="w-5 h-5 rounded border-neon-green/50 bg-card accent-neon-green cursor-pointer"
-                      />
-                      <span className="text-sm font-semibold text-foreground group-hover:text-neon-green transition-colors">
-                        I have completed the UPI payment ✓
-                      </span>
-                    </label>
-
-                    {/* Transaction ID field */}
                     <div className="space-y-1.5">
                       <Label
-                        htmlFor="booking-txn-id"
+                        htmlFor="booking-screenshot"
                         className="text-foreground font-semibold"
                       >
-                        Transaction ID (Last 4 digits) *
+                        Upload Payment Screenshot *
                       </Label>
-                      <Input
-                        id="booking-txn-id"
-                        data-ocid="booking.transaction_id.input"
-                        placeholder="e.g. 4821"
-                        maxLength={10}
-                        value={transactionId}
-                        onChange={(e) => setTransactionId(e.target.value)}
-                        className={inputClass}
+                      <input
+                        id="booking-screenshot"
+                        data-ocid="booking.screenshot.upload_button"
+                        type="file"
+                        accept="image/*"
+                        required
+                        onChange={(e) => {
+                          setScreenshotFile(e.target.files?.[0] ?? null);
+                        }}
+                        className="block w-full text-sm text-muted-foreground file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-neon-blue/10 file:text-neon-blue hover:file:bg-neon-blue/20 cursor-pointer border border-border rounded-lg p-2 bg-card"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Check your UPI payment receipt and enter the last 4
-                        digits of the Transaction ID.
+                      {screenshotFile && (
+                        <p className="text-xs text-neon-green">
+                          ✓ {screenshotFile.name} selected
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground italic">
+                        Our team verifies screenshots before your VR-ID becomes
+                        active.
                       </p>
+                      {screenshotUploadProgress > 0 &&
+                        screenshotUploadProgress < 100 && (
+                          <div className="w-full bg-border rounded-full h-1.5">
+                            <div
+                              className="bg-neon-blue h-1.5 rounded-full transition-all"
+                              style={{ width: `${screenshotUploadProgress}%` }}
+                            />
+                          </div>
+                        )}
                     </div>
                   </motion.div>
                 )}
 
                 {/* Book Now button logic */}
                 {totalAmount === null ? (
-                  // No price package — show Book Now directly
                   <Button
                     data-ocid="booking.submit.button"
                     type="submit"
@@ -582,8 +693,7 @@ export function BookingForm() {
                       </>
                     )}
                   </Button>
-                ) : paymentInitiated && canShowBookNow ? (
-                  // Priced package + payment initiated + transaction ID entered — show Book Now
+                ) : canShowBookNow ? (
                   <motion.div
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -591,9 +701,9 @@ export function BookingForm() {
                     <Button
                       data-ocid="booking.submit.button"
                       type="submit"
-                      disabled={isSubmitting || !paymentConfirmed}
+                      disabled={isSubmitting}
                       size="lg"
-                      className="w-full bg-neon-blue text-background font-bold text-lg py-6 hover:bg-neon-blue/90 animate-pulse-glow shadow-neon-blue disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="w-full bg-neon-blue text-background font-bold text-lg py-6 hover:bg-neon-blue/90 animate-pulse-glow shadow-neon-blue"
                     >
                       {isSubmitting ? (
                         <>

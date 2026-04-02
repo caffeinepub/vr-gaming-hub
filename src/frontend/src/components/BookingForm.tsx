@@ -26,9 +26,13 @@ import { toast } from "sonner";
 const SHOP_PHONE = "918985866377";
 
 const packageOptions = [
-  { label: "Single Game Session (\u20b9199)", price: 199, isGroup: false },
-  { label: "30 Minute VR Pass (\u20b9349)", price: 349, isGroup: false },
-  { label: "1 Hour Unlimited (\u20b9599)", price: 599, isGroup: false },
+  {
+    label: "Single Game Session (\u20b9199/person)",
+    price: 199,
+    isGroup: false,
+  },
+  { label: "30 Minute VR Pass (\u20b9349/person)", price: 349, isGroup: false },
+  { label: "1 Hour Unlimited (\u20b9599/person)", price: 599, isGroup: false },
   { label: "Group Package \u2013 \u20b9449/person", price: 449, isGroup: true },
   { label: "Birthday Party Package (\u20b92999)", price: 2999, isGroup: false },
 ];
@@ -36,8 +40,10 @@ const packageOptions = [
 function calcTotal(packageLabel: string, groupSize: number): number | null {
   const pkg = packageOptions.find((p) => p.label === packageLabel);
   if (!pkg || pkg.price === null) return null;
-  if (pkg.isGroup) return pkg.price * Math.max(1, groupSize);
-  return pkg.price;
+  // Birthday Party Package is a flat rate
+  if (packageLabel.includes("Birthday Party")) return pkg.price;
+  // All other packages multiply by group size
+  return pkg.price * Math.max(1, groupSize);
 }
 
 const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
@@ -77,6 +83,9 @@ export function BookingForm() {
   const [showPayQrModal, setShowPayQrModal] = useState(false);
 
   const totalAmount = calcTotal(form.gamePackage, Number(form.groupSize) || 1);
+  const selectedPkg = packageOptions.find((p) => p.label === form.gamePackage);
+  const isBirthday = form.gamePackage.includes("Birthday Party");
+  const groupSize = Number(form.groupSize) || 1;
 
   const getUpiLink = () => {
     if (totalAmount === null) return "#";
@@ -243,6 +252,13 @@ export function BookingForm() {
                 <h3 className="font-display font-black text-xl text-foreground mb-1">
                   Scan to Pay
                 </h3>
+
+                {!isBirthday && groupSize > 1 && selectedPkg && (
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {groupSize} × ₹{selectedPkg.price} per person
+                  </p>
+                )}
+
                 <p className="text-3xl font-black text-neon-blue glow-blue mb-5">
                   ₹{totalAmount}
                 </p>
@@ -574,11 +590,11 @@ export function BookingForm() {
                     className="flex items-center justify-between rounded-xl border border-neon-blue/30 bg-neon-blue/5 px-4 py-3"
                   >
                     <span className="text-sm text-muted-foreground font-medium">
-                      Total Amount
-                      {packageOptions.find((p) => p.label === form.gamePackage)
-                        ?.isGroup
-                        ? ` (${form.groupSize} × ₹449)`
-                        : ""}
+                      {isBirthday
+                        ? "Total Amount (flat rate)"
+                        : groupSize > 1 && selectedPkg
+                          ? `Total Amount (${groupSize} × ₹${selectedPkg.price})`
+                          : "Total Amount"}
                     </span>
                     <span className="text-xl font-black text-neon-blue glow-blue">
                       ₹{totalAmount}
